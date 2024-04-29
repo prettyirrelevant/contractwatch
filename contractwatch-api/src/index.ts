@@ -1,5 +1,5 @@
+import { getTableColumns, like, and, gte, lte, eq } from 'drizzle-orm';
 import { verifyMessage, getAddress, isAddress } from 'viem';
-import { getTableColumns, and, eq } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { addMiddleware } from '@trigger.dev/hono';
@@ -246,12 +246,53 @@ app.delete(
   },
 );
 
-// app.get('/api/events', (c) => {
-//   const { db } = c.get('services');
-//   const { id } = c.get('auth');
+app.get(
+  '/api/events',
+  zValidator(
+    'query',
+    z.object({
+      address: z
+        .string()
+        .refine((val) => isAddress(val), { message: 'Invalid contract address provided' })
+        .transform((val) => getAddress(val)),
+      fromBlock: z.coerce.number().optional(),
+      toBlock: z.coerce.number().optional(),
+      limit: z.coerce.number().default(50),
+      offset: z.coerce.number().default(0),
+      eventName: z.string().optional(),
+      txHash: z.string().optional(),
+    }),
+  ),
+  async (c) => {
+    const { db } = c.get('services');
+    const { address: contractAddress, fromBlock, eventName, toBlock, txHash, offset, limit } = c.req.valid('query');
 
-//   return c.json('');
-// });
+    const filters = [eq(schema.events.address, contractAddress)];
+    if (fromBlock) {
+      filters.push(gte(schema.events.blockNumber, fromBlock));
+    }
+    if (toBlock) {
+      filters.push(lte(schema.events.blockNumber, toBlock));
+    }
+    if (eventName) {
+      filters.push(like(schema.events.name, `%${eventName}%`));
+    }
+    if (txHash) {
+      filters.push(eq(schema.events.txHash, txHash));
+    }
+
+    // todo: add filtering by topic.
+
+    const events = await db
+      .select()
+      .from(schema.events)
+      .where(and(...filters))
+      .limit(limit)
+      .offset(offset);
+
+    return c.json({ message: 'Events returned successfully', data: events });
+  },
+);
 
 app.onError((err, c) => {
   console.error(err.stack);

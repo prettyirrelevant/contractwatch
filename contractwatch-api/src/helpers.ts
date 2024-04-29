@@ -140,5 +140,5 @@ export const stringifyJsonWithBigInt = (data: unknown) => {
 };
 
 export const parseJsonWithBigInt = (data: string) => {
-  return JSON.parse(data, (k, v) => (typeof v === 'string' && /^(-?\d+)n$/.test(v) ? BigInt(v.slice(0, -1)) : v));
+  return JSON.parse(data, (k, v) => (typeof v === 'string' && /^(-?\d+)n$/.test(v) ? v.slice(0, -1) : v));
 };
