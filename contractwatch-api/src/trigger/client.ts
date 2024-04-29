@@ -14,7 +14,7 @@ export const createTriggerClient = (opts: {
   const { tursoAuthToken, tursoUrl, apiKey, apiUrl } = opts;
 
   const triggerClient = new TriggerClient({
-    id: 'wrapped-naira',
+    id: 'contractwatch',
     apiUrl: apiUrl,
     apiKey: apiKey,
   });

@@ -4,7 +4,8 @@
     "deploy": "wrangler deploy --minify src/index.ts",
     "format": "eslint . --ext .ts,.js --fix",
     "db:migrate": "tsx src/db/migrate",
-    "dev": "wrangler dev src/index.ts"
+    "dev": "wrangler dev src/index.ts",
+    "tools": "tsx src/tools"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",

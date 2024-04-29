@@ -1,10 +1,10 @@
 import { verifyMessage, getAddress, isAddress } from 'viem';
+import { getTableColumns, and, eq } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { addMiddleware } from '@trigger.dev/hono';
 import { zValidator } from '@hono/zod-validator';
 import { poweredBy } from 'hono/powered-by';
-import { and, eq } from 'drizzle-orm';
 import { logger } from 'hono/logger';
 import { cache } from 'hono/cache';
 import { cors } from 'hono/cors';
@@ -108,13 +108,13 @@ app.use('/api/events', async (c, next) => {
   await next();
 });
 
-app.get(
-  '*',
-  cache({
-    cacheControl: 'max-age=3600',
-    cacheName: 'contractwatch',
-  }),
-);
+// app.get(
+//   '*',
+//   cache({
+//     cacheControl: 'max-age=3600',
+//     cacheName: 'contractwatch',
+//   }),
+// );
 
 app.get('/', (c) => {
   return c.json({ data: { msg: 'pong!' } });
@@ -127,7 +127,6 @@ app.post(
     z.object({
       address: z
         .string()
-        .length(42)
         .refine((val) => isAddress(val), { message: 'Invalid contract address provided' })
         .transform((val) => getAddress(val)),
       startBlock: z.number().optional(),
@@ -158,12 +157,14 @@ app.post(
 
 app.get('/api/applications', async (c) => {
   const { db } = c.get('services');
-  const { id } = c.get('auth');
+  const { id: authId } = c.get('auth');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { accountId, ...otherColumns } = getTableColumns(schema.applications);
   const apps = await db
-    .select()
+    .select({ ...otherColumns })
     .from(schema.applications)
-    .where(eq(schema.applications.accountId, id as string));
+    .where(eq(schema.applications.accountId, authId as string));
 
   return c.json({ message: 'Applications returned successfully', data: apps });
 });
@@ -171,19 +172,21 @@ app.get('/api/applications', async (c) => {
 app.get('/api/applications/:id', zValidator('param', z.object({ id: z.string().startsWith('apps') })), async (c) => {
   const { id } = c.req.valid('param');
   const { db } = c.get('services');
-  const { id: accountId } = c.get('auth');
+  const { id: authId } = c.get('auth');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { accountId, ...otherColumns } = getTableColumns(schema.applications);
   const apps = await db
-    .select()
+    .select({ ...otherColumns })
     .from(schema.applications)
-    .where(and(eq(schema.applications.accountId, accountId as string), eq(schema.applications.id, id)))
+    .where(and(eq(schema.applications.accountId, authId as string), eq(schema.applications.id, id)))
     .limit(1);
 
   if (apps.length === 0) {
     throw new HTTPException(404, { message: `Application with id: ${id} does not exist` });
   }
 
-  return c.json({ message: 'Application returned successfully', data: app });
+  return c.json({ message: 'Application returned successfully', data: apps[0] });
 });
 
 app.delete(
@@ -192,13 +195,13 @@ app.delete(
   async (c) => {
     const { id } = c.req.valid('param');
     const { db } = c.get('services');
-    const { id: accountId } = c.get('auth');
+    const { id: authId } = c.get('auth');
 
     await db
       .delete(schema.applications)
-      .where(and(eq(schema.applications.accountId, accountId as string), eq(schema.applications.id, id)));
+      .where(and(eq(schema.applications.accountId, authId as string), eq(schema.applications.id, id)));
 
-    return c.json({ message: 'Application with id: ${id} deleted successfully', data: null });
+    return c.json({ message: `Application with id: ${authId} deleted successfully`, data: null });
   },
 );
 
@@ -206,8 +209,10 @@ app.get('/api/accounts/api-keys', async (c) => {
   const { db } = c.get('services');
   const { id } = c.get('auth');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { accountId, ...otherColumns } = getTableColumns(schema.apiKeys);
   const apiKeys = await db
-    .select()
+    .select({ ...otherColumns })
     .from(schema.apiKeys)
     .where(eq(schema.apiKeys.accountId, id as string));
 

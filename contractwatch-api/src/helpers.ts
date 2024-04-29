@@ -56,7 +56,7 @@ export const fetchAbiFromEtherscan = async (contractAddress: string) => {
       throw new Error(`ABI not found. Message: ${abiResponse.message}`);
     }
 
-    return Abi.parse(abiResponse.result);
+    return Abi.parse(JSON.parse(abiResponse.result));
   } catch (error) {
     console.error('Failed to fetch ABI from Etherscan:', error);
     throw error;
