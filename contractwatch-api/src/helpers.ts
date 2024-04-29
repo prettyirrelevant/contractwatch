@@ -1,3 +1,5 @@
+import { Abi } from 'abitype/zod';
+
 interface ABIEtherscanResponse {
   status: '1' | '0';
   message: string;
@@ -35,7 +37,7 @@ const buildEtherscanUrl = (params: Record<string, string>) => {
   return url.toString();
 };
 
-export const fetchAbiFromEtherscan = async (contractAddress: string): Promise<string> => {
+export const fetchAbiFromEtherscan = async (contractAddress: string) => {
   const params = {
     address: contractAddress,
     module: 'contract',
@@ -53,7 +55,7 @@ export const fetchAbiFromEtherscan = async (contractAddress: string): Promise<st
       throw new Error(`ABI not found. Message: ${abiResponse.message}`);
     }
 
-    return abiResponse.result;
+    return Abi.parse(abiResponse.result);
   } catch (error) {
     console.error('Failed to fetch ABI from Etherscan:', error);
     throw error;
@@ -78,12 +80,12 @@ export const getContractCreationBlock = async (contractAddress: string) => {
       throw new Error(`Contract creation tx hash not found. Message: ${contractCreationData.message}`);
     }
 
-    const txHash = contractCreationData.result[0].txHash;
+    const creationTxHash = contractCreationData.result[0].txHash;
 
     const transactionParams = {
       action: 'eth_getTransactionByHash',
+      txhash: creationTxHash,
       module: 'proxy',
-      txhash: txHash,
     };
 
     const transactionResponse = await fetch(buildEtherscanUrl(transactionParams));
@@ -96,8 +98,8 @@ export const getContractCreationBlock = async (contractAddress: string) => {
       throw new Error(`Error retrieving transaction hash. Message: ${JSON.stringify(transactionData.error)}`);
     }
 
-    const blockNumber = parseInt(transactionData.result?.blockNumber as string);
-    return { blockNumber, txHash };
+    const initBlockNumber = parseInt(transactionData.result?.blockNumber as string);
+    return { initBlockNumber, creationTxHash };
   } catch (error) {
     console.error('Failed to retrieve contract creation block from Etherscan:', error);
     throw error;

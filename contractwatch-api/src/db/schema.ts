@@ -1,4 +1,6 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { Abi } from 'abitype/zod';
+import { z } from 'zod';
 
 import { generateApiKey } from './utils';
 
@@ -15,23 +17,38 @@ export const accounts = sqliteTable('accounts', {
 });
 
 export const applications = sqliteTable('applications', {
+  contractAddress: text('contract_address', { length: 42 })
+    .$type<`0x${string}`>()
+    .notNull()
+    .references(() => contracts.address, { onDelete: 'cascade' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date())
     .$onUpdateFn(() => new Date()),
-  blockQueryState: text('block_query_state', { mode: 'json' })
-    .notNull()
-    .$type<{ lastQueriedBlock: number; startBlock: number }>(),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),
   accountId: text('account_id')
     .notNull()
     .references(() => accounts.id, { onDelete: 'cascade' }),
-  contractAddress: text('contract_address', { length: 42 }).$type<`0x${string}`>().notNull(),
-  indexedEvents: text('indexed_events', { mode: 'json' }).notNull().$type<string[]>(),
   name: text('name', { length: 100 }).notNull(),
-  abi: text('abi', { mode: 'json' }).notNull(),
+  startBlock: integer('start_block').notNull(),
+  id: text('id').primaryKey(),
+});
+
+export const contracts = sqliteTable('contracts', {
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date())
+    .$onUpdateFn(() => new Date()),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  address: text('address', { length: 42 }).$type<`0x${string}`>().notNull().unique(),
+  abi: text('abi', { mode: 'json' }).$type<z.infer<typeof Abi>>().notNull(),
+  lastQueriedBlock: integer('last_queried_block').notNull().default(-1),
+  creationTxHash: text('creation_transaction_hash').notNull(),
+  creationBlock: integer('creation_block').notNull(),
   id: text('id').primaryKey(),
 });
 
@@ -41,9 +58,9 @@ export const events = sqliteTable('events', {
     .notNull()
     .$defaultFn(() => new Date())
     .$onUpdateFn(() => new Date()),
-  applicationId: text('application_id')
+  contractAddress: text('contract_address')
     .notNull()
-    .references(() => applications.id, { onDelete: 'cascade' }),
+    .references(() => contracts.address, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

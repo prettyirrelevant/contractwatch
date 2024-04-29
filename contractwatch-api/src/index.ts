@@ -7,13 +7,12 @@ import { poweredBy } from 'hono/powered-by';
 import { and, eq } from 'drizzle-orm';
 import { logger } from 'hono/logger';
 import { cache } from 'hono/cache';
-import { Abi } from 'abitype/zod';
 import { cors } from 'hono/cors';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { getContractCreationBlock, fetchAbiFromEtherscan } from './helpers';
-import { getOrCreateAccount, initDbClient, schema, newId } from './db';
+import { getOrCreateContract, getOrCreateAccount, initDbClient, schema, newId } from './db';
+import { getContractCreationBlock } from './helpers';
 import { createTriggerClient } from './trigger';
 
 const app = new Hono<{
@@ -131,7 +130,6 @@ app.post(
         .length(42)
         .refine((val) => isAddress(val), { message: 'Invalid contract address provided' })
         .transform((val) => getAddress(val)),
-      events: z.array(z.string()).min(1).max(10),
       startBlock: z.number().optional(),
       name: z.string().max(100),
     }),
@@ -139,31 +137,18 @@ app.post(
   async (c) => {
     const data = c.req.valid('json');
 
-    const abi = await fetchAbiFromEtherscan(data.address);
-    const parsedAbi = Abi.parse(abi);
-    for (const event of data.events) {
-      if (!parsedAbi.some((parsedEvent) => parsedEvent.type === 'event' && parsedEvent.name === event)) {
-        throw new HTTPException(422, { message: `One of the events, ${event} provided is not present in the ABI` });
-      }
-    }
-
-    let startBlock = data.startBlock;
-    if (!startBlock) {
-      const { blockNumber } = await getContractCreationBlock(data.address);
-      startBlock = blockNumber;
-    }
-
     const { db } = c.get('services');
     const { id: userId } = c.get('auth');
 
+    const { initBlockNumber, creationTxHash } = await getContractCreationBlock(data.address);
+    await getOrCreateContract(db, data.address, { creationBlock: initBlockNumber, creationTxHash });
+
     const appId = newId('application');
     await db.insert(schema.applications).values({
-      blockQueryState: { lastQueriedBlock: -1, startBlock },
+      startBlock: data.startBlock || initBlockNumber,
       contractAddress: data.address,
       accountId: userId as string,
-      indexedEvents: data.events,
       name: data.name,
-      abi: parsedAbi,
       id: appId,
     });
 
