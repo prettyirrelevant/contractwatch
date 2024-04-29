@@ -1,8 +1,23 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, customType, integer, text } from 'drizzle-orm/sqlite-core';
 import { Abi } from 'abitype/zod';
 import { z } from 'zod';
 
+import { stringifyJsonWithBigInt, parseJsonWithBigInt } from '../helpers';
 import { generateApiKey } from './utils';
+
+const customText = customType<{ data: string }>({
+  fromDriver(value) {
+    return parseJsonWithBigInt(value as string);
+  },
+
+  toDriver(value) {
+    return stringifyJsonWithBigInt(value);
+  },
+
+  dataType() {
+    return 'text';
+  },
+});
 
 export const accounts = sqliteTable('accounts', {
   updatedAt: integer('updated_at', { mode: 'timestamp' })
@@ -64,9 +79,9 @@ export const events = sqliteTable('events', {
     .notNull()
     .$defaultFn(() => new Date()),
   topics: text('topics', { mode: 'json' }).$type<`0x${string}`[] | []>().notNull(),
-  args: text('args', { mode: 'json' }).$type<object>().notNull(),
   blockHash: text('block_hash').$type<`0x${string}`>(),
   data: text('data').$type<`0x${string}`>().notNull(),
+  args: customText('args').$type<object>().notNull(),
   txIndex: integer('transaction_index'),
   blockNumber: integer('block_number'),
   txHash: text('transaction_hash'),

@@ -4,8 +4,8 @@ import { InferInsertModel, eq } from 'drizzle-orm';
 import { Abi } from 'abitype/zod';
 import { z } from 'zod';
 
+import { stringifyJsonWithBigInt, parseJsonWithBigInt, scrollSepoliaAnkr } from '../helpers';
 import { initDbClient, schema, newId } from '../db';
-import { scrollSepoliaAnkr } from '../helpers';
 
 export const createTriggerClient = (opts: {
   tursoAuthToken: string;
@@ -64,15 +64,15 @@ export const createTriggerClient = (opts: {
 
         io.logger.debug(`Events: ${JSON.stringify(events)}`);
         await io.sendEvents(`index ${contract.address} ${fromBlock}:${latestBlock}`, events);
-        // await io.runTask(
-        //   `update lastQueriedBlock for ${contract.address}`,
-        //   async () =>
-        //     await db
-        //       .update(schema.contracts)
-        //       .set({ lastQueriedBlock: latestBlock })
-        //       .where(eq(schema.contracts.address, contract.address))
-        //       .returning({ updatedContractAddress: schema.contracts.address }),
-        // );
+        await io.runTask(
+          `update lastQueriedBlock for ${contract.address}`,
+          async () =>
+            await db
+              .update(schema.contracts)
+              .set({ lastQueriedBlock: latestBlock })
+              .where(eq(schema.contracts.address, contract.address))
+              .returning({ updatedContractAddress: schema.contracts.address }),
+        );
       });
     },
     trigger: intervalTrigger({ seconds: 300 }),
@@ -101,17 +101,17 @@ export const createTriggerClient = (opts: {
       const abi = Abi.parse(JSON.parse(contract.abi));
       const events = await io.runTask(`get events for ${contract.address} ${fromBlock}:${toBlock}`, async () => {
         const logs = await publicClient.getContractEvents({
+          fromBlock: BigInt(fromBlock),
           address: contract.address,
-          fromBlock: fromBlock,
-          toBlock: toBlock,
+          toBlock: BigInt(toBlock),
           abi,
         });
 
-        return logs.map((log) => JSON.stringify(log));
+        return logs.map((log) => stringifyJsonWithBigInt(log));
       });
 
       const updatedEvents: InferInsertModel<typeof schema.events>[] = events.map((eventStr) => {
-        const event = JSON.parse(eventStr) as Log;
+        const event = parseJsonWithBigInt(eventStr) as Log;
         const decodedEvent = decodeEventLog({ topics: event.topics, data: event.data, abi });
         return {
           blockNumber: Number(event.blockNumber),
@@ -138,8 +138,8 @@ export const createTriggerClient = (opts: {
 
     trigger: eventTrigger({
       schema: z.object({
-        fromBlock: z.coerce.bigint(),
-        toBlock: z.coerce.bigint(),
+        fromBlock: z.number(),
+        toBlock: z.number(),
         address: z.string(),
       }),
       name: 'index.contract',

@@ -134,3 +134,11 @@ export const scrollSepoliaAnkr = defineChain({
   name: 'Scroll Sepolia',
   id: 534_351,
 });
+
+export const stringifyJsonWithBigInt = (data: unknown) => {
+  return JSON.stringify(data, (k, v) => (typeof v === 'bigint' ? `${v.toString()}n` : v));
+};
+
+export const parseJsonWithBigInt = (data: string) => {
+  return JSON.parse(data, (k, v) => (typeof v === 'string' && /^(-?\d+)n$/.test(v) ? BigInt(v.slice(0, -1)) : v));
+};
