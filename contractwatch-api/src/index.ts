@@ -242,12 +242,12 @@ app.delete(
   },
 );
 
-app.get('/api/events', (c) => {
-  const { db } = c.get('services');
-  const { id } = c.get('auth');
+// app.get('/api/events', (c) => {
+//   const { db } = c.get('services');
+//   const { id } = c.get('auth');
 
-  return c.json('');
-});
+//   return c.json('');
+// });
 
 app.onError((err, c) => {
   console.error(err.stack);

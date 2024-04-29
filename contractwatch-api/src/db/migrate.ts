@@ -1,7 +1,10 @@
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+import path from 'node:path';
 
 import { initDbClient } from './client';
+
+dotenv.config({ path: path.dirname(path.dirname(__dirname)) + '/.dev.vars' });
 
 const { client, db } = initDbClient(process.env.TURSO_URL as string, process.env.TURSO_AUTH_TOKEN as string);
 

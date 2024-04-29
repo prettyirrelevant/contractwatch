@@ -1,3 +1,4 @@
+import { defineChain } from 'viem';
 import { Abi } from 'abitype/zod';
 
 interface ABIEtherscanResponse {
@@ -106,6 +107,30 @@ export const getContractCreationBlock = async (contractAddress: string) => {
   }
 };
 
-// Run a task for each contract.
-// 1. get all distinct appplications(contract address, abi)
-//
+export const scrollSepoliaAnkr = defineChain({
+  blockExplorers: {
+    default: {
+      apiUrl: 'https://sepolia-blockscout.scroll.io/api',
+      url: 'https://sepolia-blockscout.scroll.io',
+      name: 'Blockscout',
+    },
+  },
+  contracts: {
+    multicall3: {
+      address: '0xca11bde05977b3631167028862be2a173976ca11',
+      blockCreated: 9473,
+    },
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.ankr.com/scroll_sepolia_testnet'],
+    },
+  },
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  name: 'Scroll Sepolia',
+  id: 534_351,
+});

@@ -53,21 +53,21 @@ export const contracts = sqliteTable('contracts', {
 });
 
 // todo: improve this. allow blocks to be filtered, allow args to be filtered also.
-export const events = sqliteTable('events', {
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .notNull()
-    .$defaultFn(() => new Date())
-    .$onUpdateFn(() => new Date()),
-  contractAddress: text('contract_address')
-    .notNull()
-    .references(() => contracts.address, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  decodedLogs: text('decoded_logs', { mode: 'json' }).notNull(),
-  logs: text('logs', { mode: 'json' }).notNull(),
-  id: text('id').primaryKey(),
-});
+// export const events = sqliteTable('events', {
+//   updatedAt: integer('updated_at', { mode: 'timestamp' })
+//     .notNull()
+//     .$defaultFn(() => new Date())
+//     .$onUpdateFn(() => new Date()),
+//   contractAddress: text('contract_address')
+//     .notNull()
+//     .references(() => contracts.address, { onDelete: 'cascade' }),
+//   createdAt: integer('created_at', { mode: 'timestamp' })
+//     .notNull()
+//     .$defaultFn(() => new Date()),
+//   decodedLogs: text('decoded_logs', { mode: 'json' }).notNull(),
+//   logs: text('logs', { mode: 'json' }).notNull(),
+//   id: text('id').primaryKey(),
+// });
 
 export const apiKeys = sqliteTable('api_keys', {
   updatedAt: integer('updated_at', { mode: 'timestamp' })
