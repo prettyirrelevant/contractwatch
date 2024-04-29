@@ -1,8 +1,6 @@
 import { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { customAlphabet } from 'nanoid';
-import { Abi } from 'abitype/zod';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 
 import { fetchAbiFromEtherscan } from '../helpers';
 import { contracts, accounts } from './schema';
