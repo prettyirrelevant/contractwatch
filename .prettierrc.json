@@ -1,0 +1,18 @@
+{
+    "bracketSpacing": true,
+    "bracketSameLine": false,
+    "embeddedLanguageFormatting": "auto",
+    "endOfLine": "lf",
+    "htmlWhitespaceSensitivity": "css",
+    "ignorePath": ".prettierignore",
+    "insertPragma": false,
+    "jsxSingleQuote": false,
+    "proseWrap": "preserve",
+    "quoteProps": "as-needed",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "printWidth": 119,
+    "trailingComma": "all",
+    "useTabs": false,
+    "withNodeModules": false
+}
