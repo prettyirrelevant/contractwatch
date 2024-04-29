@@ -50,12 +50,12 @@ addMiddleware(app, (env) =>
 );
 
 app.use('/api/*', async (c, next) => {
-  if (c.req.path === '/api/trigger' || c.req.path === '/api/banks') {
+  if (c.req.path === '/api/trigger' || c.req.path === '/api/events') {
     await next();
     return;
   }
 
-  const headerSignature = c.req.header('X-Signature');
+  const headerSignature = c.req.header('X-Wallet-Signature');
   if (!headerSignature) {
     throw new HTTPException(401, { message: 'Authentication header missing!' });
   }
@@ -84,6 +84,31 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
+app.use('/api/events', async (c, next) => {
+  if (c.req.method === 'GET') {
+    const apiKey = c.req.header('X-API-Key');
+    if (!apiKey) {
+      throw new HTTPException(401, { message: 'Missing API key. Include a valid API key in the "X-API-Key" header.' });
+    }
+
+    const { db } = c.get('services');
+    const apiKeys = await db.select().from(schema.apiKeys).where(eq(schema.apiKeys.key, apiKey)).limit(1);
+    if (apiKeys.length === 0) {
+      throw new HTTPException(401, {
+        message: 'Invalid or inactive API key. Please provide a valid and active API key.',
+      });
+    }
+
+    if (!apiKeys[0].isActive) {
+      throw new HTTPException(401, {
+        message: 'Invalid or inactive API key. Please provide a valid and active API key.',
+      });
+    }
+  }
+
+  await next();
+});
+
 app.get(
   '*',
   cache({
@@ -108,17 +133,13 @@ app.post(
         .transform((val) => getAddress(val)),
       events: z.array(z.string()).min(1).max(10),
       startBlock: z.number().optional(),
-      abi: z.string().optional(),
       name: z.string().max(100),
     }),
   ),
   async (c) => {
     const data = c.req.valid('json');
-    let abi = data.abi;
-    if (!abi) {
-      abi = await fetchAbiFromEtherscan(data.address);
-    }
 
+    const abi = await fetchAbiFromEtherscan(data.address);
     const parsedAbi = Abi.parse(abi);
     for (const event of data.events) {
       if (!parsedAbi.some((parsedEvent) => parsedEvent.type === 'event' && parsedEvent.name === event)) {
@@ -177,7 +198,7 @@ app.get('/api/applications/:id', zValidator('param', z.object({ id: z.string().s
     throw new HTTPException(404, { message: `Application with id: ${id} does not exist` });
   }
 
-  return c.json({ message: 'Applications returned successfully', data: app });
+  return c.json({ message: 'Application returned successfully', data: app });
 });
 
 app.delete(
@@ -232,7 +253,7 @@ app.delete(
       .delete(schema.apiKeys)
       .where(and(eq(schema.apiKeys.accountId, accountId as string), eq(schema.apiKeys.id, id)));
 
-    return c.json({ message: 'API keys returned successfully', data: null });
+    return c.json({ message: 'API key deleted successfully', data: null });
   },
 );
 
@@ -242,9 +263,6 @@ app.get('/api/events', (c) => {
 
   return c.json('');
 });
-
-// endpoint to add a contract and events to be monitored.
-// endpoint to fetch the events from the REST API.
 
 app.onError((err, c) => {
   console.error(err.stack);

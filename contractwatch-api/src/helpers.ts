@@ -103,3 +103,7 @@ export const getContractCreationBlock = async (contractAddress: string) => {
     throw error;
   }
 };
+
+// Run a task for each contract.
+// 1. get all distinct appplications(contract address, abi)
+//
