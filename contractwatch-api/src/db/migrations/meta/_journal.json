@@ -8,6 +8,13 @@
       "when": 1714404401694,
       "tag": "0000_groovy_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1714414160978,
+      "tag": "0001_stiff_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

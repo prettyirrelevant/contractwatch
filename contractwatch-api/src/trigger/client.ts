@@ -1,9 +1,11 @@
 import { intervalTrigger, TriggerClient, eventTrigger } from '@trigger.dev/sdk';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, decodeEventLog, http, Log } from 'viem';
+import { InferInsertModel, eq } from 'drizzle-orm';
+import { Abi } from 'abitype/zod';
 import { z } from 'zod';
 
+import { initDbClient, schema, newId } from '../db';
 import { scrollSepoliaAnkr } from '../helpers';
-import { initDbClient, schema } from '../db';
 
 export const createTriggerClient = (opts: {
   tursoAuthToken: string;
@@ -60,6 +62,7 @@ export const createTriggerClient = (opts: {
           });
         }
 
+        io.logger.debug(`Events: ${JSON.stringify(events)}`);
         await io.sendEvents(`index ${contract.address} ${fromBlock}:${latestBlock}`, events);
         // await io.runTask(
         //   `update lastQueriedBlock for ${contract.address}`,
@@ -79,6 +82,60 @@ export const createTriggerClient = (opts: {
   });
 
   triggerClient.defineJob({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    run: async (payload, io, _ctx) => {
+      const { fromBlock, address, toBlock } = payload;
+      const contract = await io.runTask(
+        `fetch contract ${address} from db for block range ${fromBlock}:${toBlock}`,
+        async () => {
+          const result = await db
+            .select()
+            .from(schema.contracts)
+            .where(eq(schema.contracts.address, address as `0x${string}`))
+            .limit(1);
+
+          return { ...result[0], abi: JSON.stringify(result[0].abi) };
+        },
+      );
+
+      const abi = Abi.parse(JSON.parse(contract.abi));
+      const events = await io.runTask(`get events for ${contract.address} ${fromBlock}:${toBlock}`, async () => {
+        const logs = await publicClient.getContractEvents({
+          address: contract.address,
+          fromBlock: fromBlock,
+          toBlock: toBlock,
+          abi,
+        });
+
+        return logs.map((log) => JSON.stringify(log));
+      });
+
+      const updatedEvents: InferInsertModel<typeof schema.events>[] = events.map((eventStr) => {
+        const event = JSON.parse(eventStr) as Log;
+        const decodedEvent = decodeEventLog({ topics: event.topics, data: event.data, abi });
+        return {
+          blockNumber: Number(event.blockNumber),
+          txIndex: event.transactionIndex,
+          txHash: event.transactionHash,
+          name: decodedEvent.eventName,
+          blockHash: event.blockHash,
+          address: contract.address,
+          logIndex: event.logIndex,
+          args: decodedEvent.args,
+          topics: event.topics,
+          id: newId('events'),
+          data: event.data,
+        };
+      });
+
+      await io.runTask(`insert events for ${contract.address} ${fromBlock}:${toBlock} into db`, async () => {
+        await db.insert(schema.events).values(updatedEvents);
+        return;
+      });
+
+      io.logger.debug(`${fromBlock}:${toBlock} - ${address}`);
+    },
+
     trigger: eventTrigger({
       schema: z.object({
         fromBlock: z.coerce.bigint(),
@@ -87,12 +144,6 @@ export const createTriggerClient = (opts: {
       }),
       name: 'index.contract',
     }),
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    run: async (payload, io, _ctx) => {
-      const { fromBlock, address, toBlock } = payload;
-      io.logger.debug(`${fromBlock}:${toBlock} - ${address}`);
-    },
     id: 'contract-indexer-job',
     name: 'Contract Indexer',
     version: '0.0.1',

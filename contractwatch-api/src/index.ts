@@ -6,7 +6,6 @@ import { addMiddleware } from '@trigger.dev/hono';
 import { zValidator } from '@hono/zod-validator';
 import { poweredBy } from 'hono/powered-by';
 import { logger } from 'hono/logger';
-import { cache } from 'hono/cache';
 import { cors } from 'hono/cors';
 import { Hono } from 'hono';
 import { z } from 'zod';

@@ -10,6 +10,7 @@ const prefixes = {
   application: 'apps',
   account: 'accounts',
   apiKey: 'api_key',
+  events: 'events',
 } as const;
 
 const nanoid = customAlphabet('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
