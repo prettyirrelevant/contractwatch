@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { accounts } from './schema';
 
 const prefixes = {
-  application: 'applications',
+  application: 'apps',
   account: 'accounts',
   apiKey: 'api_key',
   cache: 'cache',

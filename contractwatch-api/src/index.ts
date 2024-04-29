@@ -150,7 +150,7 @@ app.post(
   },
 );
 
-app.get('api/applications', async (c) => {
+app.get('/api/applications', async (c) => {
   const { db } = c.get('services');
   const { id } = c.get('auth');
 
@@ -162,39 +162,89 @@ app.get('api/applications', async (c) => {
   return c.json({ message: 'Applications returned successfully', data: apps });
 });
 
-app.get('api/applications/:appId', zValidator('param', z.object({ appId: z.string() })), async (c) => {
-  const { appId } = c.req.valid('param');
+app.get('/api/applications/:id', zValidator('param', z.object({ id: z.string().startsWith('apps') })), async (c) => {
+  const { id } = c.req.valid('param');
   const { db } = c.get('services');
-  const { id } = c.get('auth');
+  const { id: accountId } = c.get('auth');
 
   const apps = await db
     .select()
     .from(schema.applications)
-    .where(and(eq(schema.applications.accountId, id as string), eq(schema.applications.id, appId)))
+    .where(and(eq(schema.applications.accountId, accountId as string), eq(schema.applications.id, id)))
     .limit(1);
 
   if (apps.length === 0) {
-    throw new HTTPException(404, { message: `Application with id: ${appId} does not exist` });
+    throw new HTTPException(404, { message: `Application with id: ${id} does not exist` });
   }
 
   return c.json({ message: 'Applications returned successfully', data: app });
 });
 
-app.delete('api/applications/:appId', zValidator('param', z.object({ appId: z.string() })), async (c) => {
-  const { appId } = c.req.valid('param');
+app.delete(
+  '/api/applications/:id',
+  zValidator('param', z.object({ id: z.string().startsWith('apps') })),
+  async (c) => {
+    const { id } = c.req.valid('param');
+    const { db } = c.get('services');
+    const { id: accountId } = c.get('auth');
+
+    await db
+      .delete(schema.applications)
+      .where(and(eq(schema.applications.accountId, accountId as string), eq(schema.applications.id, id)));
+
+    return c.json({ message: 'Application with id: ${id} deleted successfully', data: null });
+  },
+);
+
+app.get('/api/accounts/api-keys', async (c) => {
   const { db } = c.get('services');
   const { id } = c.get('auth');
 
-  await db
-    .delete(schema.applications)
-    .where(and(eq(schema.applications.accountId, id as string), eq(schema.applications.id, appId)));
+  const apiKeys = await db
+    .select()
+    .from(schema.apiKeys)
+    .where(eq(schema.apiKeys.accountId, id as string));
 
-  return c.json({ message: 'Application with id: ${appId} deleted successfully', data: null });
+  return c.json({ message: 'API keys returned successfully', data: apiKeys });
+});
+
+app.post('/api/accounts/api-keys', async (c) => {
+  const { db } = c.get('services');
+  const { id: accountId } = c.get('auth');
+
+  const apiKey = await db
+    .insert(schema.apiKeys)
+    .values({ accountId: accountId as string, id: newId('apiKey') })
+    .returning();
+
+  return c.json({ message: 'API key created successfully', data: apiKey }, 201);
+});
+
+app.delete(
+  '/api/accounts/api-keys/:id',
+  zValidator('param', z.object({ id: z.string().startsWith('api_key') })),
+  async (c) => {
+    const { id: accountId } = c.get('auth');
+    const { db } = c.get('services');
+    const { id } = c.req.valid('param');
+
+    await db
+      .delete(schema.apiKeys)
+      .where(and(eq(schema.apiKeys.accountId, accountId as string), eq(schema.apiKeys.id, id)));
+
+    return c.json({ message: 'API keys returned successfully', data: null });
+  },
+);
+
+app.get('/api/events', (c) => {
+  const { db } = c.get('services');
+  const { id } = c.get('auth');
+
+  return c.json('');
 });
 
 // endpoint to add a contract and events to be monitored.
 // endpoint to fetch the events from the REST API.
-// endpoint to remove contract(s).
 
 app.onError((err, c) => {
   console.error(err.stack);
