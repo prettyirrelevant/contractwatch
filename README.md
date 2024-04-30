@@ -1,46 +1,45 @@
-# ContractWatch
+# 📜 ContractWatch
 
-ContractWatch is a project that allows you to monitor and track events emitted by Ethereum smart contracts. With it, you can easily retrieve contract events, filter them based on various criteria, and integrate them into your applications.
+ContractWatch is a powerful tool that simplifies monitoring and tracking events emitted by Ethereum smart contracts. 🔍 With ContractWatch, you can effortlessly retrieve contract events, apply filters based on various criteria, and seamlessly integrate them into your applications. 🚀
 
 > [!NOTE]
-> Only Scroll Sepolia is supported at this time.
+> 📌 Currently, only Scroll Sepolia is supported.
 
-## Features
+## 🌟 Features
 
-- Create and manage applications associated with specific smart contracts
-- Retrieve contract events with customizable filters
-- Filter events by block range, event name, transaction hash, and more
-- Pagination support for efficient event retrieval
-- Secure authentication using wallet signatures
-- API key management for secure access to event data
-- ERC20 token for API usage and credit management
-- Subscription contract for purchasing ERC20 tokens and API credits
+- 🏗️ Manage applications associated with specific smart contracts
+- 🔍 Filter events by block range, event name, transaction hash, and more.
+- 📏 Pagination support for efficient event retrieval
+- 🔒 Secure authentication using wallet signatures
+- 🔑 API key management for secure access to event data
+- 💰 ERC20 token for API usage and credit management
+- 🛒 Subscription contract for purchasing ERC20 tokens and API credits
 
-## ERC20 Token and Subscription Contract
+## 💰 ERC20 Token and Subscription Contract
 
 ContractWatch utilizes an ERC20 token and a subscription contract to manage API access and usage. The ERC20 token serves as a means of payment for accessing the ContractWatch API, while the subscription contract allows users to purchase the ERC20 token and buy API credits.
 
 To gain access to the ContractWatch API, users need to:
-1. Interact with the subscription contract to purchase the ERC20 token.
-2. Use the ERC20 token to buy API credits through the subscription contract.
-3. Utilize the purchased API credits to make requests to the ContractWatch API endpoints.
+
+1. 🛒 Interact with the subscription contract to purchase the ERC20 token.
+2. 💸 Use the ERC20 token to buy API credits through the subscription contract.
+3. 🔑 Utilize the purchased API credits to make requests to the ContractWatch API endpoints.
 
 The subscription contract provides a seamless and secure way for users to acquire the necessary ERC20 tokens and API credits.
 
-## Getting Started
+## 🚀 Getting Started
 
 To get started with ContractWatch, follow these steps:
 
-1. Sign up for a ContractWatch account and obtain your API credentials.
-2. Interact with the subscription contract to purchase ERC20 tokens and API credits.
-3. Authenticate your requests by including the required headers (wallet signature or API key).
-4. Create an application by providing the contract address and other relevant details.
-5. Retrieve contract events using the provided API endpoints and filters.
-6. Integrate the retrieved event data into your application.
+1. 💳 Interact with the subscription contract to purchase ERC20 tokens and API credits.
+2. 🔐 Authenticate your requests by including the required wallet signature in the header.
+3. 🏗️ Create an application by providing the contract address and other relevant details.
+4. 📥 Retrieve contract events using the provided API endpoints and filters.
+5. 🔧 Integrate the retrieved event data into your application.
 
-For detailed information on interacting with the subscription contract and using the API endpoints, please refer to the API documentation.
+For detailed information on interacting with the subscription contract and using the API endpoints, please refer to the API documentation. 📚
 
-## API Endpoints
+## 🌐 API Endpoints
 
 - `POST /api/applications`: Create a new application associated with a smart contract.
 - `GET /api/applications`: Retrieve a list of your applications.
@@ -51,17 +50,49 @@ For detailed information on interacting with the subscription contract and using
 - `DELETE /api/accounts/api-keys/:id`: Delete an API key.
 - `GET /api/events`: Retrieve contract events based on specified filters.
 
-## Authentication
+## 🔒 Authentication
 
 ContractWatch provides two authentication methods:
 
-1. Wallet Signature: Sign a predefined message using your Ethereum wallet and include the signature in the `X-Wallet-Signature` header.
-2. API Key: Include your API key in the `X-API-Key` header when making requests to the `/api/events` endpoint.
+1. 🔏 Wallet Signature: Sign a predefined message using your Ethereum wallet and include the signature in the `X-Wallet-Signature` header.
+2. 🔑 API Key: Include your API key in the `X-API-Key` header when making requests to the `/api/events` endpoint.
 
-Ensure that you keep your API keys secure and do not share them with unauthorized parties.
+Ensure that you keep your wallet and API keys secure. 🙊
 
-## Support
+### 🔏 Generating Wallet Signatures
 
-If you encounter any issues or have questions about ContractWatch, please open an issue here on GitHub.
+To generate a wallet signature for authentication, follow these steps:
 
-Happy contract watching!
+1. 📝 Use the following predefined message to sign:
+   ```
+   'By signing this message, I confirm my intention to use ContractWatch and agree to the associated terms and conditions.'
+   ```
+2. 🔑 Use your Ethereum wallet (e.g., MetaMask) to sign the predefined message.
+3. 📋 Copy the generated signature.
+4. 📥 Include the signature in the `X-Wallet-Signature` header when making requests to the ContractWatch API.
+
+Here's a code snippet to generate the wallet signature in TypeScript using the `ethers` library:
+
+```typescript
+import { ethers } from 'ethers';
+
+const message = 'By signing this message, I confirm my intention to use ContractWatch and agree to the associated terms and conditions.';
+const signer = new ethers.Wallet(privateKey);
+const signature = await signer.signMessage(message);
+```
+
+And here's a code snippet to generate the wallet signature in Python using the `web3` library:
+
+```python
+from web3.auto import w3
+
+message = 'By signing this message, I confirm my intention to use ContractWatch and agree to the associated terms and conditions.'
+signed_message = w3.eth.account.sign_message(message, private_key=private_key)
+signature = signed_message.signature.hex()
+```
+
+## 🆘 Support
+
+If you encounter any issues or have questions about ContractWatch, please open an issue here on GitHub. 🐛
+
+Happy contract watching! 🎉

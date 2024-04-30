@@ -8,6 +8,7 @@
     "tools": "tsx src/tools"
   },
   "dependencies": {
+    "@hono/swagger-ui": "^0.2.1",
     "@hono/zod-validator": "^0.2.1",
     "@libsql/client": "^0.6.0",
     "@trigger.dev/hono": "^2.3.18",

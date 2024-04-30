@@ -62,8 +62,8 @@ export const createTriggerClient = (opts: {
           });
         }
 
-        io.logger.debug(`Events: ${JSON.stringify(events)}`);
         await io.sendEvents(`index ${contract.address} ${fromBlock}:${latestBlock}`, events);
+
         await io.runTask(
           `update lastQueriedBlock for ${contract.address}`,
           async () =>
