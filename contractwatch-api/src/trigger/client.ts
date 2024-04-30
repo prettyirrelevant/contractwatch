@@ -50,35 +50,36 @@ export const createTriggerClient = (opts: {
         Number(await publicClient.getBlockNumber()),
       );
 
-      contracts.forEach(async (contract) => {
-        const events = [];
-        const fromBlock = contract.lastQueriedBlock === -1 ? contract.creationBlock : contract.lastQueriedBlock;
+      for (const contract of contracts) {
+        await io.runTask(`chunk log indexing for ${contract.address}`, async () => {
+          const events = [];
 
-        for (let start = fromBlock; start <= latestBlock; start += blockChunkSize) {
-          const end = Math.min(start + blockChunkSize - 1, latestBlock);
-          events.push({
-            payload: { address: contract.address, fromBlock: start, toBlock: end },
-            name: 'index.contract',
-          });
-        }
+          const fromBlock = contract.lastQueriedBlock === -1 ? contract.creationBlock : contract.lastQueriedBlock;
+          for (let start = fromBlock; start <= latestBlock; start += blockChunkSize) {
+            const end = Math.min(start + blockChunkSize - 1, latestBlock);
+            events.push({
+              payload: { address: contract.address, fromBlock: start, toBlock: end },
+              name: 'index.contract',
+            });
+          }
 
-        await io.sendEvents(`index ${contract.address} ${fromBlock}:${latestBlock}`, events);
-
-        await io.runTask(
-          `update lastQueriedBlock for ${contract.address}`,
-          async () =>
-            await db
-              .update(schema.contracts)
-              .set({ lastQueriedBlock: latestBlock })
-              .where(eq(schema.contracts.address, contract.address))
-              .returning({ updatedContractAddress: schema.contracts.address }),
-        );
-      });
+          await io.sendEvents(`index ${contract.address} ${fromBlock}:${latestBlock}`, events);
+          await io.runTask(
+            `update lastQueriedBlock for ${contract.address}`,
+            async () =>
+              await db
+                .update(schema.contracts)
+                .set({ lastQueriedBlock: latestBlock })
+                .where(eq(schema.contracts.address, contract.address))
+                .returning({ updatedContractAddress: schema.contracts.address }),
+          );
+        });
+      }
     },
-    trigger: intervalTrigger({ seconds: 300 }),
+    trigger: intervalTrigger({ seconds: 90 }),
     name: 'Contract Indexer Scheduler',
     id: 'contract-indexer-scheduler',
-    version: '0.0.1',
+    version: '0.0.3',
   });
 
   triggerClient.defineJob({
@@ -109,6 +110,8 @@ export const createTriggerClient = (opts: {
 
         return logs.map((log) => stringifyJsonWithBigInt(log));
       });
+
+      if (events.length < 1) return;
 
       const updatedEvents: InferInsertModel<typeof schema.events>[] = events.map((eventStr) => {
         const event = parseJsonWithBigInt(eventStr) as Log;
@@ -146,7 +149,7 @@ export const createTriggerClient = (opts: {
     }),
     id: 'contract-indexer-job',
     name: 'Contract Indexer',
-    version: '0.0.1',
+    version: '0.0.2',
   });
 
   return triggerClient;
