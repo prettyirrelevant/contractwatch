@@ -27,6 +27,14 @@ To gain access to the ContractWatch API, users need to:
 
 The subscription contract provides a seamless and secure way for users to acquire the necessary ERC20 tokens and API credits.
 
+### 🔗 Deployed Contracts
+Below are the links to the deployed ERC20 token and subscription contract:
+
+- Watch Token (CWT): [0xd62bfbf2050e8fead90e32558329d43a6efce4c8](https://sepolia.scrollscan.com/address/0xd62bfbf2050e8fead90e32558329d43a6efce4c8)
+- Subscription Contract: [0xfca69b9033c414cbcfa24b30228376fd040b70b2](https://sepolia.scrollscan.com/address/0xfca69b9033c414cbcfa24b30228376fd040b70b2)
+
+Please refer to these contracts for purchasing ERC20 tokens and API credits.
+
 ## 🚀 Getting Started
 
 To get started with ContractWatch, follow these steps:
